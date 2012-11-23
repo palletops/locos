@@ -3,7 +3,8 @@
   (:refer-clojure :exclude [==])
   (:use
    [clojure.core.logic
-    :only [all fresh membero prep project run* s# == >fd <fd]]))
+    :only [all fresh membero partial-map prep project run* s# walk-term
+           == >fd <fd]]))
 
 (def ^{:private true :doc "Translate to logic functions"}
   op-map
@@ -12,13 +13,20 @@
    '> >fd
    '< <fd})
 
+(defn ->pmap
+  "Do partial-map unification on all sub-keys"
+  [x]
+  (if (map? x)
+    (partial-map x)
+    x))
+
 (defn rule->logic-fns
   "Takes a rule, specified as a pattern, a production and zero or more guards,
    and return logic functions that encode them."
   [rule]
   (let [[pattern production & guards] (prep rule)]
-    [(fn [expr] (== expr pattern))
-     (fn [sbst] (== sbst production))
+    [(fn [expr] (== expr (->pmap (walk-term pattern ->pmap))))
+     (fn [prod] (== prod production))
      (fn []
        (if (seq guards)
          (fn [substitutions]

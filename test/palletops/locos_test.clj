@@ -33,9 +33,28 @@
   (let [rules (rules->logic-fns
                '[[{:item :a} {:x 1}]
                  [{:item :b} {:x 2}]
-                 [{:item :b :factor ?f} {:x (* 2 ?f)}]
-                 [{:item :b :factor ?f} {:x (* 3 ?f)} [> ?f 4]]])]
+                 [{:item :c :factor ?f} {:x (* 2 ?f)}]
+                 [{:item :c :factor ?f} {:x (* 3 ?f)} [> ?f 4]]])]
     (is (= {:x 1} (config {:item :a} rules)))
     (is (= {:x 2} (config {:item :b} rules)))
-    (is (= {:x 4} (config {:item :b :factor 2} rules)))
-    (is (= {:x 15} (config {:item :b :factor 5} rules)))))
+    (is (= {:x 4} (config {:item :c :factor 2} rules)))
+    (is (= {:x 15} (config {:item :c :factor 5} rules)))
+    (let [expr {:item :c :factor 5}]
+      (is (= {:x 15} (config expr rules))))))
+
+(deftest extra-key-test
+  (let [rules (rules->logic-fns
+               '[[{:item :a} {:x 1}]
+                 [{:item :b :factor ?f} {:x (* 2 ?f)}]
+                 [{:item :c :d {:factor ?f}} {:x (* 3 ?f)}]])]
+    (is (= [{:x 1}] (apply-rules {:item :a :extra :e} rules)))
+    (is (= [{:x 1}] (apply-rules {:item :a :extra {:e 1}} rules)))
+    (is (= '[{:x (* 2 2)}]
+           (apply-rules {:item :b :factor 2 :extra {:e 1}} rules)))
+    (is (= '[{:x (* 3 3)}]
+           (apply-rules {:item :c :d {:factor 3} :extra {:e 1} :f2 1} rules)))
+    (is (= '[{:x (* 3 3)}]
+           (apply-rules {:item :c :d {:factor 3 :duh 1}} rules)))
+    (let [expr {:item :c :d {:factor 3} :extra {:e 1} :f2 1}]
+      (is (= '[{:x (* 3 3)}]
+             (apply-rules expr rules))))))
