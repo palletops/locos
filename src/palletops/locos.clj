@@ -26,7 +26,9 @@
 (defn ->pmap
   "Return a value that will use partial-map unification"
   [x]
-  (if (map? x)
+  (if (and (map? x)
+           (not (instance? clojure.lang.IRecord x))
+           (not (instance? clojure.core.logic.PMap x)))
     (partial-map x)
     x))
 
@@ -71,11 +73,13 @@
 
 (defn quote-rule
   "Quote any lvars in a rule vector's pattern, and quote production and guards."
-  [[pattern production & rules]]
-  (apply vector
-         (quote-lvars pattern)
-         (list `quote production)
-         (map #(list 'quote %) rules)))
+  [[pattern production & guards :as rule]]
+  (with-meta
+    (apply vector
+           (quote-lvars pattern)
+           (list `quote production)
+           (map #(list 'quote %) guards))
+    (meta rule)))
 
 (defn quote-rules
   "Quote un-evaluated rules"
@@ -92,7 +96,7 @@
    of valid productions."
   [expr rules]
   (run* [q]
-    (fresh [pattern production guards rule rule-name]
+    (fresh [pattern production guards rule]
       (membero
        {:pattern pattern :production production :guards guards :rule rule}
        rules)
@@ -103,19 +107,17 @@
 (defn apply-rule-productions
   "Applies first matching rewrite rule on layer spec."
   [expr rules]
-  (println "apply-rule-productions")
   (if-let [productions (seq (matching-productions expr rules))]
-    (do
-      (clojure.pprint/pprint (map :production productions))
-      (reduce
-       (fn reduce-productions [expr {:keys [production rule] :as match}]
-         (println "found rule" rule)
-         (println "found production" production)
-         (println "new expr" (deep-merge expr (eval production)))
+    (reduce
+     (fn reduce-productions [expr {:keys [production rule] :as match}]
+       (if (.contains (str production) ":clojure.core.logic/not-found")
+         ;; (throw (Exception. (str "Un-unified production" production)))
+         (do (println "skipping production" production)
+             expr)
          (-> (deep-merge expr (eval production))
-             (vary-meta update-in [:rules] concat [rule])))
-       expr
-       productions))
+             (vary-meta update-in [:rules] concat [rule]))))
+     expr
+     productions)
     expr))
 
 (defn apply-productions
