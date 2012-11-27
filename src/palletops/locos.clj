@@ -114,8 +114,14 @@
          ;; (throw (Exception. (str "Un-unified production" production)))
          (do (println "skipping production" production)
              expr)
-         (-> (deep-merge expr (eval production))
-             (vary-meta update-in [:rules] concat [rule]))))
+         (let [p (try
+                   (eval production)
+                   (catch Exception e
+                     (throw
+                      (Exception.
+                       (str "Couldn't eval locos production " production) e))))]
+           (-> (deep-merge expr p)
+               (vary-meta update-in [:rules] concat [rule])))))
      expr
      productions)
     expr))
