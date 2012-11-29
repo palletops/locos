@@ -96,7 +96,7 @@
   [rules]
   (map rule->logic-terms rules))
 
-(defn quote-lvars
+(defn ^:internal quote-lvars
   "Quote any lvars in a rule vector"
   [form]
   (postwalk
@@ -106,20 +106,25 @@
        x))
    form))
 
-(defn quote-rule
+(defn ^:internal quote-rule
   "Quote any lvars in a rule vector's pattern, and quote production and guards."
   [[pattern production & guards :as rule]]
   (with-meta
     (apply vector
            (quote-lvars pattern)
            (list `quasiquote production)
-           (map #(list 'quote %) guards))
+           (map (comp  #(list `quasiquote %)) guards))
     (meta rule)))
 
-(defn quote-rules
+(defn ^:internal quote-rules
   "Quote un-evaluated rules"
   [rules]
   (map quote-rule rules))
+
+(defmacro rules
+  "Define a set of rules."
+  [& rules]
+  `(rules->logic-terms ~(vec (quote-rules rules))))
 
 (defmacro defrules
   "Define a named set of rules."
@@ -150,7 +155,6 @@
        (fn reduce-productions [expr {:keys [production rule] :as match}]
          (if (or (.contains (str production) ":clojure.core.logic/not-found")
                  (re-find #"_\.[0-9]+" (str production)))
-           ;; (throw (Exception. (str "Un-unified production" production)))
            (do (warnf "Skipping locos production %s" production)
                expr)
            (let [p (try

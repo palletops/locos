@@ -8,7 +8,9 @@
          (quote-rule '[{:item :c :factor ?f} {:x (* 3 ?f)} (> ?f 4)]))))
 
 (deftest quote-rule-test
-  (is (= '[[{:item :c :factor '?f} '{:x (* 3 ?f)} '(> ?f 4)]]
+  (is (= '[[{:item :c, :factor (quote ?f)}
+            (palletops.locos/quasiquote {:x (* 3 ?f)})
+            (palletops.locos/quasiquote (> ?f 4))]]
          (quote-rules '[[{:item :c :factor ?f} {:x (* 3 ?f)} (> ?f 4)]]))))
 
 (deftest readme-test
