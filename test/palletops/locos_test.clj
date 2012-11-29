@@ -69,3 +69,10 @@
     (is (= {:item :b} (apply-productions {:item :b} rules)))
     (is (= {:x 1} (apply-productions {} rules)))
     (is (= {:x 2 :a 1} (apply-productions {:a 1} rules)))))
+
+(deftest guard-test
+  (let [rules (rules [{:m ?a} {:x 1} (not-pathc ?a [:c :d])])]
+    (let [r (apply-rule-productions {:m {}} rules)]
+      (is (= {:m {} :x 1} r)))
+    (let [r (apply-rule-productions {:m {:c {:d 1}}} rules)]
+      (is (= {:m {:c {:d 1}}} r)))))

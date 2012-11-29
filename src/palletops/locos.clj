@@ -131,6 +131,13 @@
   [name & rules]
   `(def ~name (rules->logic-terms ~(vec (quote-rules rules)))))
 
+;; guarantee that a path of keys does not occur in map x
+(defc not-pathc [x path]
+  (= (get-in x path ::not-found) ::not-found))
+
+(defc get-c [x s]
+  (not= (get s x ::not-found) ::not-found))
+
 (defn matching-productions
   "Takes an expression, and applies rules to it, returning a sequence
    of valid productions."
