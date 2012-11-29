@@ -3,9 +3,10 @@
   (:refer-clojure :exclude [==])
   (:use
    [clojure.core.logic
-    :only [all fresh membero partial-map prep project run* s# walk-term
+    :only [all defc fresh membero partial-map prep project run* s# walk-term
            == >fd <fd]]
-   [clojure.walk]))
+   [clojure.tools.logging :only [warnf]]
+   [clojure.walk :only [postwalk]]))
 
 (defn deep-merge
   "Recursively merge maps."
@@ -108,22 +109,27 @@
   "Applies first matching rewrite rule on layer spec."
   [expr rules]
   (if-let [productions (seq (matching-productions expr rules))]
-    (reduce
-     (fn reduce-productions [expr {:keys [production rule] :as match}]
-       (if (.contains (str production) ":clojure.core.logic/not-found")
-         ;; (throw (Exception. (str "Un-unified production" production)))
-         (do (println "skipping production" production)
-             expr)
-         (let [p (try
-                   (eval production)
-                   (catch Exception e
-                     (throw
-                      (Exception.
-                       (str "Couldn't eval locos production " production) e))))]
-           (-> (deep-merge expr p)
-               (vary-meta update-in [:rules] concat [rule])))))
-     expr
-     productions)
+    (do
+      (when-let [invalid (seq (remove map? productions))]
+        (warnf "Skipping locos productions %s" (vec invalid)))
+      (reduce
+       (fn reduce-productions [expr {:keys [production rule] :as match}]
+         (if (or (.contains (str production) ":clojure.core.logic/not-found")
+                 (re-find #"_\.[0-9]+" (str production)))
+           ;; (throw (Exception. (str "Un-unified production" production)))
+           (do (warnf "Skipping locos production %s" production)
+               expr)
+           (let [p (try
+                     (eval production)
+                     (catch Exception e
+                       (throw
+                        (Exception.
+                         (str "Couldn't eval locos production " production)
+                         e))))]
+             (-> (deep-merge expr p)
+                 (with-meta (update-in (meta expr) [:rules] concat [rule]))))))
+       expr
+       (filter map? productions)))
     expr))
 
 (defn apply-productions
