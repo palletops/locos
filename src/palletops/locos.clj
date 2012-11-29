@@ -77,7 +77,15 @@
                  (fn [substitutions]
                    (reduce
                     (fn [subs [op & args]]
-                      ((apply (op-map op op) args) subs))
+                      (let [f (or (op-map op) (try @(resolve op)
+                                                   (catch Exception e
+                                                     (throw
+                                                      (Exception.
+                                                       (str
+                                                        "Couldn't resolve " op)
+                                                       e)))))
+                            f1 (apply f args)]
+                        (f1 subs)))
                     substitutions
                     guards))
                  s#))}))
