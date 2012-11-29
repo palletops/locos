@@ -17,6 +17,32 @@
               b))]
     (apply merge-with f ms)))
 
+;;; A simple quasiquote (no unquoting)
+(defn qq-symbol
+  "Quasiquote a symbol"
+  [sym &env]
+  (if (find &env sym)
+    sym
+    (let [v (resolve sym)]
+      (if v
+        (symbol (-> v meta :ns ns-name name) (-> v meta :name name))
+        sym))))
+
+(defn quasiquote*
+  "Quasiquote a form"
+  [form &env]
+  (list 'quote
+        (postwalk
+         (fn [x]
+           (if (and (symbol? x))
+             (qq-symbol x &env)
+             x))
+         form)))
+
+(defmacro quasiquote
+  [form]
+  (quasiquote* form &env))
+
 (def ^{:private true :doc "Translate to logic functions"}
   op-map
   {`> >fd
@@ -78,7 +104,7 @@
   (with-meta
     (apply vector
            (quote-lvars pattern)
-           (list `quote production)
+           (list `quasiquote production)
            (map #(list 'quote %) guards))
     (meta rule)))
 
