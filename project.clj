@@ -1,4 +1,4 @@
-(defproject palletops/locos "0.1.0-SNAPSHOT"
+(defproject palletops/locos "0.1.0"
   :description "Logic based Configuration Functions"
   :url "https://github.com/palletops/locos"
   :license {:name "All rights reserved."}
