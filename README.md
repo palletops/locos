@@ -36,6 +36,7 @@ merging all matched rules.
 
 ## License
 
-Copyright © 2012 Hugo Duncan
 
-All rights reserved.
+Licensed under [EPL](http://www.eclipse.org/legal/epl-v10.html)
+
+Copyright © 2012-2014 Hugo Duncan, Antoni Batchelli
