@@ -5,7 +5,7 @@
    [clojure.core.logic
     :only [all defc fresh membero partial-map prep project run* s# walk-term
            == >fd <fd]]
-   [clojure.tools.logging :only [warnf]]
+   [clojure.tools.logging :only [debugf warnf]]
    [clojure.walk :only [postwalk]]))
 
 (defn deep-merge
@@ -164,15 +164,17 @@
                  (re-find #"_\.[0-9]+" (str production)))
            (do (warnf "Skipping locos production %s" production)
                expr)
-           (let [p (try
-                     (eval production)
-                     (catch Exception e
-                       (throw
-                        (Exception.
-                         (str "Couldn't eval locos production " production)
-                         e))))]
-             (-> (deep-merge expr p)
-                 (with-meta (update-in (meta expr) [:rules] concat [rule]))))))
+           (do
+             (debugf "Locos is evaling %s" production)
+             (let [p (try
+                         (eval production)
+                         (catch Exception e
+                           (throw
+                            (Exception.
+                             (str "Couldn't eval locos production " production)
+                             e))))]
+                 (-> (deep-merge expr p)
+                     (with-meta (update-in (meta expr) [:rules] concat [rule])))))))
        expr
        (filter map? productions)))
     expr))
