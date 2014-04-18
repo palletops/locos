@@ -7,7 +7,7 @@ A library for using declarative configuration data, based on logic programming.
 Add the following to your `:dependencies`:
 
 ```clj
-[palletops/locos "0.1.0"]
+[palletops/locos "0.1.1"]
 ```
 
 ## Introduction
@@ -35,7 +35,6 @@ merging all matched rules.
 ```
 
 ## License
-
 
 Licensed under [EPL](http://www.eclipse.org/legal/epl-v10.html)
 
