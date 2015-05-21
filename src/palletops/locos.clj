@@ -1,12 +1,14 @@
 (ns palletops.locos
   "Allow use of declarative rules for specifying configuration options"
   (:refer-clojure :exclude [==])
-  (:use
+  (:require
    [clojure.core.logic
-    :only [all defc fresh membero partial-map prep project run* s# walk-term
-           == >fd <fd]]
-   [clojure.tools.logging :only [debugf warnf]]
-   [clojure.walk :only [postwalk]]))
+    :refer [all defnc featurec partial-map fresh membero project run* s# ==]]
+   [clojure.core.logic.fd :as fd]
+   [clojure.core.logic.protocols :refer [walk-term]]
+   [clojure.core.logic.unifier :refer [prep]]
+   [clojure.tools.logging :refer [debugf tracef warnf]]
+   [clojure.walk :refer [postwalk]]))
 
 (defn deep-merge
   "Recursively merge maps."
@@ -45,19 +47,14 @@
 
 (def ^{:private true :doc "Translate to logic functions"}
   op-map
-  {`> >fd
-   `< <fd
-   '> >fd
-   '< <fd})
+  {`> fd/>
+   `< fd/<
+   '> fd/>
+   '< fd/<})
 
 (defn ->pmap
   "Return a value that will use partial-map unification"
-  [x]
-  (if (and (map? x)
-           (not (instance? clojure.lang.IRecord x))
-           (not (instance? clojure.core.logic.PMap x)))
-    (partial-map x)
-    x))
+  [x] x)
 
 (defn recursive-partial-map
   "Return a value that will use partial-map unification on sub-maps"
@@ -70,7 +67,7 @@
   [rule]
   (let [[pattern production & guards] (prep rule)]
     {:rule (or (-> rule meta :name) (first rule))
-     :pattern (recursive-partial-map pattern)
+     :pattern (->pmap pattern)
      :production production
      :guards (fn []
                (if (seq guards)
@@ -132,22 +129,23 @@
   `(def ~name (rules->logic-terms ~(vec (quote-rules rules)))))
 
 ;; guarantee that a path of keys does not occur in map x
-(defc not-pathc [x path]
+(defnc not-pathc [x path]
   (= (get-in x path ::not-found) ::not-found))
 
-(defc get-c [x s]
+(defnc get-c [x s]
   (not= (get s x ::not-found) ::not-found))
 
 (defn matching-productions
   "Takes an expression, and applies rules to it, returning a sequence
    of valid productions."
   [expr rules]
+  (tracef "matching-productions" expr rules)
   (run* [q]
     (fresh [pattern production guards rule]
       (membero
        {:pattern pattern :production production :guards guards :rule rule}
        rules)
-      (== expr pattern)
+      (featurec expr pattern)
       (== q {:production production :rule rule})
       (project [guards] (guards)))))
 
@@ -156,6 +154,7 @@
   [expr rules]
   (if-let [productions (seq (matching-productions expr rules))]
     (do
+      (tracef "productions" productions)
       (when-let [invalid (seq (remove map? productions))]
         (warnf "Skipping locos productions %s" (vec invalid)))
       (reduce
