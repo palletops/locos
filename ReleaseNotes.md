@@ -1,3 +1,7 @@
+## 0.1.3
+
+- Re-release of 0.1.2, with correct code.
+
 ## 0.1.2
 
 - Update core.logic.dependency to org.hugoduncan release
