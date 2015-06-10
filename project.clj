@@ -1,4 +1,4 @@
-(defproject com.palletops/locos "0.1.3-SNAPSHOT"
+(defproject com.palletops/locos "0.1.3"
   :description "Logic based Configuration Functions"
   :url "https://github.com/palletops/locos"
   :license {:name "Eclipse Public License"
