@@ -7,7 +7,7 @@ A library for using declarative configuration data, based on logic programming.
 Add the following to your `:dependencies`:
 
 ```clj
-[palletops/locos "0.1.1"]
+[palletops/locos "0.1.2"]
 ```
 
 ## Introduction

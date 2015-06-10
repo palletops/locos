@@ -1,3 +1,11 @@
+## 0.1.2
+
+- Update core.logic.dependency to org.hugoduncan release
+
+- Simplify lein-pallet-release plugin config
+
+- update .gitignore
+
 ## 0.1.1
 
 - First public release.
